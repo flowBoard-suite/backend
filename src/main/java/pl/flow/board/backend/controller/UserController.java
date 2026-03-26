@@ -15,13 +15,8 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Mono<User> addUser(@RequestBody User user) {
-        return userService.createUser(user);
-    }
-
     @PostMapping("/{userId}/board")
+    @ResponseStatus(HttpStatus.CREATED)
     public Mono<User> createBoard(@PathVariable String userId, @RequestBody Board board) {
         return userService.assignBoardToUser(userId, board);
     }
