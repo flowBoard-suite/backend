@@ -1,8 +1,10 @@
 package pl.flow.board.backend.service;
 
 import com.google.api.core.ApiFuture;
+import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
 import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -22,7 +24,7 @@ public class BoardService {
         return Mono.create(sink -> {
             ApiFuture<DocumentReference> future = firestore.collection("boards").add(board);
 
-            ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
+            ApiFutures.addCallback(future, new ApiFutureCallback<>() {
                 @Override
                 public void onSuccess(DocumentReference result) {
                     board.setId(result.getId());
@@ -41,7 +43,7 @@ public class BoardService {
         return Flux.create(sink -> {
             ApiFuture<QuerySnapshot> future = firestore.collection("boards").get();
 
-            ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
+            ApiFutures.addCallback(future, new ApiFutureCallback<>() {
                 @Override
                 public void onSuccess(QuerySnapshot result) {
                     result.getDocuments().forEach(doc -> {
@@ -61,12 +63,12 @@ public class BoardService {
 
     public Mono<Board> getBoardById(String boardId) {
         return Mono.create(sink -> {
-            ApiFuture<com.google.cloud.firestore.DocumentSnapshot> future = 
-                    firestore.collection("boards").document(boardId).get();
+            ApiFuture<DocumentSnapshot> future = firestore.collection("boards")
+                    .document(boardId).get();
 
-            ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
+            ApiFutures.addCallback(future, new ApiFutureCallback<>() {
                 @Override
-                public void onSuccess(com.google.cloud.firestore.DocumentSnapshot result) {
+                public void onSuccess(DocumentSnapshot result) {
                     if (result.exists()) {
                         sink.success(result.toObject(Board.class));
                     } else {

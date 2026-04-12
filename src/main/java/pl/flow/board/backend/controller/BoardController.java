@@ -1,7 +1,6 @@
 package pl.flow.board.backend.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pl.flow.board.backend.model.Board;
 import pl.flow.board.backend.service.BoardService;
