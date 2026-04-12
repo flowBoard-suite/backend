@@ -3,12 +3,17 @@ package pl.flow.board.backend.repository;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutures;
 import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.common.util.concurrent.MoreExecutors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+
+import pl.flow.board.backend.exception.custom.ResourceNotFoundException;
 import pl.flow.board.backend.model.User;
+import pl.flow.board.backend.utils.FirestoreUtils;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Repository
 @RequiredArgsConstructor
@@ -37,7 +42,8 @@ public class UserRepositoryImpl implements UserRepository {
         }
 
         return Mono.create(sink -> {
-            ApiFuture<com.google.cloud.firestore.WriteResult> future = firestore.collection("users").document(user.getId()).set(user);
+            ApiFuture<com.google.cloud.firestore.WriteResult> future = firestore.collection("users")
+                    .document(user.getId()).set(user);
             ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
                 @Override
                 public void onSuccess(com.google.cloud.firestore.WriteResult result) {
@@ -54,23 +60,17 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Mono<User> findById(String id) {
-        return Mono.create(sink -> {
-            ApiFuture<com.google.cloud.firestore.DocumentSnapshot> future = firestore.collection("users").document(id).get();
-            ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
-                @Override
-                public void onSuccess(com.google.cloud.firestore.DocumentSnapshot result) {
-                    if (result.exists()) {
-                        sink.success(result.toObject(User.class));
-                    } else {
-                        sink.success();
-                    }
-                }
+        ApiFuture<DocumentSnapshot> future = firestore.collection("users").document(id).get();
 
-                @Override
-                public void onFailure(Throwable t) {
-                    sink.error(t);
-                }
-            }, MoreExecutors.directExecutor());
-        });
+        return FirestoreUtils.toMono(future).flatMap(snapshot -> {
+            if (!snapshot.exists()) {
+                return Mono.error(new ResourceNotFoundException("User not found"));
+            }
+
+            return Mono.justOrEmpty(snapshot.toObject(User.class));
+
+        })
+                .log("UserRepositoryImpl.findById")
+                .subscribeOn(Schedulers.boundedElastic());
     }
 }

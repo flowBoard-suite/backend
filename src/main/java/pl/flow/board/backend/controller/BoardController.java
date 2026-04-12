@@ -1,6 +1,8 @@
 package pl.flow.board.backend.controller;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pl.flow.board.backend.model.Board;
 import pl.flow.board.backend.service.BoardService;
@@ -20,8 +22,8 @@ public class BoardController {
         return boardService.saveBoard(board);
     }
 
-    // Zmodyfikowany endpoint GET
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     public Flux<Board> getBoards(@RequestParam(name = "serialNumber", required = false) String serialNumber) {
         if (serialNumber != null && !serialNumber.isBlank()) {
             return boardService.getBoardsBySerialNumber(serialNumber);
