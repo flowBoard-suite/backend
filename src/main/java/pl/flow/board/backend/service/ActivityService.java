@@ -3,8 +3,8 @@ package pl.flow.board.backend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import pl.flow.board.backend.interfaces.ActivityRepository;
 import pl.flow.board.backend.model.Activity;
-import pl.flow.board.backend.repository.ActivityRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

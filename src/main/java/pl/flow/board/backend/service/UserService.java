@@ -3,9 +3,9 @@ package pl.flow.board.backend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import pl.flow.board.backend.interfaces.UserRepository;
 import pl.flow.board.backend.model.Board;
 import pl.flow.board.backend.model.User;
-import pl.flow.board.backend.repository.UserRepository;
 import reactor.core.publisher.Mono;
 
 @Service
