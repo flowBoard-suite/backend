@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import pl.flow.board.backend.exception.custom.ResourceNotFoundException;
+import pl.flow.board.backend.interfaces.ActivityRepository;
 import pl.flow.board.backend.model.Activity;
 import pl.flow.board.backend.utils.FirestoreUtils;
 import reactor.core.publisher.Flux;
@@ -27,38 +28,20 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     @Override
     public Mono<Activity> save(Activity activity) {
         if (activity.getId() == null || activity.getId().isBlank()) {
-            return Mono.create(sink -> {
-                ApiFuture<DocumentReference> future = firestore.collection("activities").add(activity);
-                ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
-                    @Override
-                    public void onSuccess(DocumentReference result) {
-                        activity.setId(result.getId());
-                        sink.success(activity);
-                    }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        sink.error(t);
-                    }
-                }, MoreExecutors.directExecutor());
-            });
+            ApiFuture<DocumentReference> future = firestore.collection("activities").add(activity);
+            return FirestoreUtils.toMono(future)
+                    .map(docRef -> {
+                        activity.setId(docRef.getId());
+                        return activity;
+                    });
         }
 
-        return Mono.create(sink -> {
-            ApiFuture<WriteResult> future = firestore.collection("activities")
-                    .document(activity.getId()).set(activity);
-            ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
-                @Override
-                public void onSuccess(WriteResult result) {
-                    sink.success(activity);
-                }
+        ApiFuture<WriteResult> future = firestore.collection("activities")
+                .document(activity.getId()).set(activity);
 
-                @Override
-                public void onFailure(Throwable t) {
-                    sink.error(t);
-                }
-            }, MoreExecutors.directExecutor());
-        });
+        return FirestoreUtils.toMono(future)
+                .map(writeResult -> activity);
     }
 
     @Override
@@ -102,20 +85,10 @@ public class ActivityRepositoryImpl implements ActivityRepository {
 
     @Override
     public Mono<Void> deleteById(String id) {
-        return Mono.create(sink -> {
-            ApiFuture<WriteResult> future = firestore.collection("activities").document(id)
-                    .delete();
-            ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
-                @Override
-                public void onSuccess(WriteResult result) {
-                    sink.success();
-                }
 
-                @Override
-                public void onFailure(Throwable t) {
-                    sink.error(t);
-                }
-            }, MoreExecutors.directExecutor());
-        });
+        ApiFuture<WriteResult> future = firestore.collection("activities").document(id)
+                .delete();
+
+        return FirestoreUtils.toMono(future).then();
     }
 }

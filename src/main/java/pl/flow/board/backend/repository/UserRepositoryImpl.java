@@ -1,15 +1,15 @@
 package pl.flow.board.backend.repository;
 
 import com.google.api.core.ApiFuture;
-import com.google.api.core.ApiFutures;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
-import com.google.common.util.concurrent.MoreExecutors;
+import com.google.cloud.firestore.WriteResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import pl.flow.board.backend.exception.custom.ResourceNotFoundException;
+import pl.flow.board.backend.interfaces.UserRepository;
 import pl.flow.board.backend.model.User;
 import pl.flow.board.backend.utils.FirestoreUtils;
 import reactor.core.publisher.Mono;
@@ -24,38 +24,20 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public Mono<User> save(User user) {
         if (user.getId() == null || user.getId().isBlank()) {
-            return Mono.create(sink -> {
-                ApiFuture<DocumentReference> future = firestore.collection("users").add(user);
-                ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
-                    @Override
-                    public void onSuccess(DocumentReference result) {
-                        user.setId(result.getId());
-                        sink.success(user);
-                    }
+            ApiFuture<DocumentReference> future = firestore.collection("users").add(user);
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        sink.error(t);
-                    }
-                }, MoreExecutors.directExecutor());
-            });
+            return FirestoreUtils.toMono(future)
+                    .map(docRef -> {
+                        user.setId(docRef.getId());
+                        return user;
+                    });
         }
 
-        return Mono.create(sink -> {
-            ApiFuture<com.google.cloud.firestore.WriteResult> future = firestore.collection("users")
-                    .document(user.getId()).set(user);
-            ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
-                @Override
-                public void onSuccess(com.google.cloud.firestore.WriteResult result) {
-                    sink.success(user);
-                }
+        ApiFuture<WriteResult> future = firestore.collection("users")
+                .document(user.getId()).set(user);
 
-                @Override
-                public void onFailure(Throwable t) {
-                    sink.error(t);
-                }
-            }, MoreExecutors.directExecutor());
-        });
+        return FirestoreUtils.toMono(future)
+                .map(writeResult -> user);
     }
 
     @Override

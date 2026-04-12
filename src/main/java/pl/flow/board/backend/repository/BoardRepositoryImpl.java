@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import pl.flow.board.backend.exception.custom.ResourceNotFoundException;
+import pl.flow.board.backend.interfaces.BoardRepository;
 import pl.flow.board.backend.model.Board;
 import pl.flow.board.backend.utils.FirestoreUtils;
 import reactor.core.publisher.Flux;
@@ -26,38 +27,20 @@ public class BoardRepositoryImpl implements BoardRepository {
     @Override
     public Mono<Board> save(Board board) {
         if (board.getId() == null || board.getId().isBlank()) {
-            return Mono.create(sink -> {
-                ApiFuture<DocumentReference> future = firestore.collection("boards").add(board);
-                ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
-                    @Override
-                    public void onSuccess(DocumentReference result) {
-                        board.setId(result.getId());
-                        sink.success(board);
-                    }
+            ApiFuture<DocumentReference> future = firestore.collection("boards").add(board);
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        sink.error(t);
-                    }
-                }, MoreExecutors.directExecutor());
-            });
+            return FirestoreUtils.toMono(future)
+                    .map(docRef -> {
+                        board.setId(docRef.getId());
+                        return board;
+                    });
         }
 
-        return Mono.create(sink -> {
-            ApiFuture<com.google.cloud.firestore.WriteResult> future = firestore.collection("boards")
-                    .document(board.getId()).set(board);
-            ApiFutures.addCallback(future, new com.google.api.core.ApiFutureCallback<>() {
-                @Override
-                public void onSuccess(com.google.cloud.firestore.WriteResult result) {
-                    sink.success(board);
-                }
+        ApiFuture<com.google.cloud.firestore.WriteResult> future = firestore.collection("boards")
+                .document(board.getId()).set(board);
 
-                @Override
-                public void onFailure(Throwable t) {
-                    sink.error(t);
-                }
-            }, MoreExecutors.directExecutor());
-        });
+        return FirestoreUtils.toMono(future)
+                .map(writeResult -> board);
     }
 
     @Override
