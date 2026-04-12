@@ -14,8 +14,18 @@ public class BoardController {
 
     private final BoardService boardService;
 
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<Board> createBoard(@RequestBody Board board) {
+        return boardService.saveBoard(board);
+    }
+
+    // Zmodyfikowany endpoint GET
     @GetMapping
-    public Flux<Board> getAllBoards() {
+    public Flux<Board> getBoards(@RequestParam(name = "serialNumber", required = false) String serialNumber) {
+        if (serialNumber != null && !serialNumber.isBlank()) {
+            return boardService.getBoardsBySerialNumber(serialNumber);
+        }
         return boardService.getAllBoards();
     }
 
