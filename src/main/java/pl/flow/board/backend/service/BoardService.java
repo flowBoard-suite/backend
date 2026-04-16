@@ -2,8 +2,9 @@ package pl.flow.board.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import pl.flow.board.backend.interfaces.BoardRepository;
 import pl.flow.board.backend.model.Board;
-import pl.flow.board.backend.repository.BoardRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -26,7 +27,6 @@ public class BoardService {
     }
 
     public Mono<Board> getBoardById(String boardId) {
-        return boardRepository.findById(boardId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Board not found with id: " + boardId)));
+        return boardRepository.findById(boardId);
     }
 }

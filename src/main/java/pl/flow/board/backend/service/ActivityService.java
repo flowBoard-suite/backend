@@ -2,8 +2,9 @@ package pl.flow.board.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import pl.flow.board.backend.interfaces.ActivityRepository;
 import pl.flow.board.backend.model.Activity;
-import pl.flow.board.backend.repository.ActivityRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -22,8 +23,7 @@ public class ActivityService {
     }
 
     public Mono<Activity> getActivityById(String activityId) {
-        return activityRepository.findById(activityId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Activity not found with id: " + activityId)));
+        return activityRepository.findById(activityId);
     }
 
     public Mono<Void> deleteActivity(String activityId) {
